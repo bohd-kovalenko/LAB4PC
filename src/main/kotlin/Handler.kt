@@ -11,7 +11,6 @@ import response.InitialDataResponse
 import response.OperationStatus
 import response.Response
 import response.ResultResponse
-import java.io.BufferedInputStream
 import java.net.Socket
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutorService
@@ -31,16 +30,18 @@ class Handler {
     private var result: CompletableFuture<Array<IntArray>>? = null
 
     fun handle(socket: Socket) {
-        val inputStream = BufferedInputStream(socket.getInputStream())
+        val inputStream = CountingInputStream(socket.getInputStream())
         val outputStream = socket.getOutputStream()
         inputStream.mark(READ_LIMIT)
         while (inputStream.read() != -1) {
             inputStream.reset()
+            inputStream.resetCounter()
             val command = runCatching {
                 jsonMapper.readValue(inputStream, Command::class.java)
             }.getOrElse {
                 ErrorCommand()
             }
+            println("Received ${inputStream.getBytesRead()} bytes from the client")
             val response = processCommand(command)
             val responseBytes = jsonMapper.writeValueAsBytes(response)
             println("Sending ${responseBytes.size} bytes back to the client")
