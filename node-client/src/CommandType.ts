@@ -1,0 +1,5 @@
+export enum CommandType {
+    INITIAL_DATA = "INITIAL_DATA",
+    START_CALCULATION = "START_CALCULATION",
+    GET_RESULT = "GET_RESULT"
+}
