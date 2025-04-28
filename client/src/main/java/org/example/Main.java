@@ -8,6 +8,7 @@ import org.example.commands.InitialDataCommand;
 import org.example.commands.StartCalculationCommand;
 import org.example.data.ComputationalData;
 import org.example.response.Response;
+import org.example.util.CountingInputStream;
 
 import java.io.BufferedInputStream;
 import java.net.InetAddress;
@@ -22,17 +23,19 @@ public class Main {
         System.out.println("Please enter the port to which you want to connect:");
         var port = scanner.nextInt();
         try (var client = new Socket(InetAddress.getLocalHost(), port)) {
-            var input = new BufferedInputStream(client.getInputStream(),500000);
+            var input = new CountingInputStream(client.getInputStream(), 500000);
             while (true) {
                 System.out.println("Please enter the type of command, you want to send (1 - initial data, 2 - start calculation, 3 - get result, 4 - exit):");
                 var commandType = scanner.nextInt();
                 if (commandType == 4) break;
                 var command = convertCommand(commandType);
                 client.getOutputStream().write(jsonMapper.writeValueAsBytes(command));
+                input.resetCounter();
                 input.mark(2);
                 input.read();
                 input.reset();
                 var response = jsonMapper.readValue(input, Response.class);
+                System.out.println("Received " + input.getBytesRead() + " bytes from the server");
                 System.out.println(response);
             }
         } catch (Exception ignored) {
@@ -40,7 +43,7 @@ public class Main {
             scanner.close();
         }
     }
-    
+
     private static Command convertCommand(int commandType) {
         return switch (commandType) {
             case 1 -> new InitialDataCommand(new ComputationalData(10000, 100, 1));

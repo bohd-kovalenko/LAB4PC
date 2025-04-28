@@ -42,7 +42,9 @@ class Handler {
                 ErrorCommand()
             }
             val response = processCommand(command)
-            outputStream.write(jsonMapper.writeValueAsBytes(response))
+            val responseBytes = jsonMapper.writeValueAsBytes(response)
+            println("Sending ${responseBytes.size} bytes back to the client")
+            outputStream.write(responseBytes)
             inputStream.mark(READ_LIMIT)
         }
     }
@@ -87,7 +89,12 @@ class Handler {
         }
     }
 
-    fun generateMatrix(size: Int, threadCount: Int, maxNumber: Int, pool: ExecutorService): CompletableFuture<Array<IntArray>> {
+    fun generateMatrix(
+        size: Int,
+        threadCount: Int,
+        maxNumber: Int,
+        pool: ExecutorService
+    ): CompletableFuture<Array<IntArray>> {
         val matrix = Array(size) { IntArray(size) }
         val columnsPerThread = size / threadCount
         val futures = mutableListOf<CompletableFuture<Void>>()
@@ -115,4 +122,4 @@ class Handler {
         return CompletableFuture.allOf(*futures.toTypedArray())
             .thenApply { matrix }
     }
-    }
+}
